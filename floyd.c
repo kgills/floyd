@@ -9,9 +9,10 @@
 /* Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 /* Defines */
-#define ARRAY_DIM   8
+#define ARRAY_DIM   16384
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -73,8 +74,8 @@ void print_array(float* array[])
 int main(int argc, char *argv[])
 {
     unsigned i,j,k;
-
-    printf("\n *** Floyd's alrogithm ***\n");
+    struct timeval start_time, stop_time, elapsed_time;
+    double etime, flops;
 
     // Initialize the array
     float *array[ARRAY_DIM];
@@ -95,11 +96,16 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("Initial array\n");
-    print_array(array);
+    if(ARRAY_DIM < 32) {
+        printf("Initial array\n");
+        print_array(array);
+    }
+    
+    gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
     for(k = 0; k < ARRAY_DIM; k++) {
+        #pragma omp parallel for private(j) schedule(static)
         for(i = 0; i < ARRAY_DIM; i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
                 array[i][j] = MIN(array[i][j], (array[i][k] + array[k][j]));
@@ -107,8 +113,27 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("Final array\n");
-    print_array(array);
+    gettimeofday(&stop_time, NULL);
+    timersub(&stop_time, &start_time, &elapsed_time);    
+    etime = elapsed_time.tv_sec+elapsed_time.tv_usec/1000000.0;
+
+    if(ARRAY_DIM < 32) {
+        printf("\nFinal array\n");
+        print_array(array);
+    }
+
+    // Check the output of the matrix
+    for(i = 0; i < ARRAY_DIM; i++) {
+        for(j = 0; j < ARRAY_DIM; j++) {
+            if(array[i][j] != (float)abs(i-j)) {
+                printf("Array error! i = %d j= %d array[i][j] = %d\n", i, j, (unsigned)array[i][j]);
+                return 1;
+            }
+        }
+    }
+
+    flops = ((double)2 * (double)ARRAY_DIM * (double)ARRAY_DIM * (double)ARRAY_DIM)/etime;
+    printf("%d, %f, %f, %d\n", ARRAY_DIM, etime, flops, omp_get_max_threads());
     
     return 0;
 }

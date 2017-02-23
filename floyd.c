@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define ARRAY_DIM 	8
 
@@ -26,7 +27,7 @@ int main(void)
 	for(i = 0; i < ARRAY_DIM; i++) {
 		printf("\n");
 		for(j = 0; j < ARRAY_DIM; j++) {
-			printf("%d ", array[i][j]);
+			printf("%f ", array[i][j]);
 		}
 	}
 	printf("\n");

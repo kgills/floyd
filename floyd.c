@@ -10,7 +10,7 @@ int main(void)
 	printf("\n *** Floyd's alrogithm ***\n");
 
 	// Initialize the array
-	float **array=(float**)malloc(ARRAY_DIM * sizeof(float));
+	float *array[ARRAY_DIM];
 	k = 0;
 	for(i = 0; i < ARRAY_DIM; i++) {
 		array[i] = (float*)malloc(ARRAY_DIM * sizeof(float));

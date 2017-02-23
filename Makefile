@@ -1,5 +1,5 @@
-CC=gcc
-C_FLAGS=-O4
+CC=pgcc
+C_FLAGS=-O4 -Munroll -mcmodel=medium
 OUTPUT=floyd.out
 
 all: floyd.c

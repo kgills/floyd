@@ -12,8 +12,8 @@
 #include <sys/time.h>
 
 /* Defines */
-#define ARRAY_DIM   8
-// #define ARRAY_DIM   16384
+// #define ARRAY_DIM 2048  
+#define ARRAY_DIM   16384
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -105,7 +105,10 @@ int main(int argc, char *argv[])
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
+    
+    #pragma acc data copy(array[0:ARRAY_DIM][0:ARRAY_DIM])
     for(k = 0; k < ARRAY_DIM; k++) {
+        #pragma acc kernels
         for(i = 0; i < ARRAY_DIM; i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
                 array[i][j] = MIN(array[i][j], (array[i][k] + array[k][j]));

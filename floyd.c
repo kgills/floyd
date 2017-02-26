@@ -12,7 +12,8 @@
 #include <sys/time.h>
 
 /* Defines */
-#define ARRAY_DIM   16384
+// #define ARRAY_DIM  8 
+#define ARRAY_DIM   16384 
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -104,11 +105,13 @@ int main(int argc, char *argv[])
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
+    float* tmp = (float*)malloc(ARRAY_DIM*sizeof(float));
     for(k = 0; k < ARRAY_DIM; k++) {
+        memcpy(tmp, array[k], ARRAY_DIM*sizeof(float));
         #pragma omp parallel for private(j) schedule(static)
         for(i = 0; i < ARRAY_DIM; i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
-                array[i][j] = MIN(array[i][j], (array[i][k] + array[k][j]));
+                array[i][j] = MIN(array[i][j], (array[i][k] + tmp[j]));
             }
         }
     }

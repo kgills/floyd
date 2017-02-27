@@ -10,10 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include "mpi.h"
 
 /* Defines */
-// #define ARRAY_DIM  8 
-#define ARRAY_DIM   16384 
+// #define ARRAY_DIM 2048  
+#define ARRAY_DIM   16384
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -78,18 +79,28 @@ int main(int argc, char *argv[])
     struct timeval start_time, stop_time, elapsed_time;
     double etime, flops;
 
+    int id, p, i_offset, root;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &p);
+
+    i_offset = id*(ARRAY_DIM/p);
+
     // Initialize the array
-    float *array[ARRAY_DIM];
-    k = 0;
-    for(i = 0; i < ARRAY_DIM; i++) {
+    float* array[ARRAY_DIM/p];
+    float* tmp = (float*)malloc(ARRAY_DIM*sizeof(float)); 
+    for(i = 0; i < (ARRAY_DIM/p); i++) {
         array[i] = (float*)malloc(ARRAY_DIM * sizeof(float));
         for(j = 0; j < ARRAY_DIM; j++) {
-            
-            if(i == j) {
+
+            // Offset the value of i 
+            int i_offset_temp = i+i_offset; 
+            if(i_offset == j) {
                 array[i][j] = 0;
-            } else if((i-j) == 1) {
+            } else if((i_offset-j) == 1) {
                 array[i][j] = 1;
-            } else if((j-i) == 1) {
+            } else if((j-i_offset) == 1) {
                 array[i][j] = 1;
             } else {
                 array[i][j] = MAX_VAL;
@@ -101,22 +112,26 @@ int main(int argc, char *argv[])
         printf("Initial array\n");
         print_array(array);
     }
-    
+ 
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
-    float* tmp = (float*)malloc(ARRAY_DIM*sizeof(float));
     for(k = 0; k < ARRAY_DIM; k++) {
 
-
-        #pragma omp parallel for private(i) schedule(static)
-        for(i = 0; i < ARRAY_DIM; i++) {
-            tmp[i] = array[k][i];
+        // Have to copy out the kth row 
+        root = k/p;
+        if(root == id) {
+            int offset_temp = k - i_offset;
+            #pragma omp parallel for private(i) schedule(static)
+            for(i = 0; i < ARRAY_DIM; i++) {
+                tmp[i] = array[offset_temp][i];
+            }
+            // mempcy(tmp, array[offset], ARRAY_DIM);
         }
-        
-       //  memcpy(tmp, array[k], ARRAY_DIM*sizeof(float));
-        #pragma omp parallel for private(j) schedule(static)
-        for(i = 0; i < ARRAY_DIM; i++) {
+
+        MPI_Bcast(tmp, ARRAY_DIM, MPI_DOUBLE, root, MPI_COMM_WORLD);
+        #pragma omp parallel for private(i,j) schedule(static)
+        for(i = 0; i < (ARRAY_DIM/p); i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
                 array[i][j] = MIN(array[i][j], (array[i][k] + tmp[j]));
             }

@@ -1,6 +1,6 @@
-CC=pgcc
-C_FLAGS=-mp -O4 -Munroll -mcmodel=medium
-OUTPUT=floyd_omp_for.out
+CC=mpicc
+C_FLAGS=-fopenmp -O4 -mcmodel=medium
+OUTPUT=floyd_omp_mpi.out
 
 all: floyd.c
 	$(CC) $(C_FLAGS) $^ -o $(OUTPUT)

@@ -9,7 +9,11 @@
 
 ITERS=$(seq 1 10)
 CORES=$(seq 28 28)
-SIZE=16384
+r
+y
+q
+x
+SIZE=
 FILE_NAME="floyd_acc"
 
 for CORE in ${CORES}
@@ -21,6 +25,6 @@ do
 
     for ITER in ${ITERS}
     do
-        ./floyd.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
+        ./floyd_acc_8192.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
     done
 done

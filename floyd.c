@@ -12,11 +12,11 @@
 #include <sys/time.h>
 
 /* Defines */
-// #define ARRAY_DIM 2048  
-#define ARRAY_DIM   16384
+ #define ARRAY_DIM  8192 
+// #define ARRAY_DIM   16384
 #define MAX_VAL     ARRAY_DIM
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
+// #define MIN(a,b) (((a)<(b))?(a):(b))
 
 /* Globals */
  
@@ -74,13 +74,14 @@ void print_array(float* array[])
  ******************************************************************************/
 int main(int argc, char *argv[])
 {
-    unsigned i,j,k;
+    unsigned i,j;
     struct timeval start_time, stop_time, elapsed_time;
     double etime, flops;
+    float tmp_val;
 
     // Initialize the array
-    float *array[ARRAY_DIM];
-    k = 0;
+    float restrict *array[ARRAY_DIM]; 
+    float* restrict tmp = (float*)malloc(ARRAY_DIM*sizeof(float));
     for(i = 0; i < ARRAY_DIM; i++) {
         array[i] = (float*)malloc(ARRAY_DIM * sizeof(float));
         for(j = 0; j < ARRAY_DIM; j++) {
@@ -105,15 +106,24 @@ int main(int argc, char *argv[])
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
-    
-    #pragma acc data copy(array[0:ARRAY_DIM][0:ARRAY_DIM])
+    #pragma acc data present_or_copy(array[:ARRAY_DIM][:ARRAY_DIM]) present_or_create(tmp[:ARRAY_DIM])
+    {
     for(k = 0; k < ARRAY_DIM; k++) {
+        
+        #pragma acc kernels
+        for(i = 0; i < ARRAY_DIM; i++) {
+            tmp[i] = array[k][i];
+        }
+
         #pragma acc kernels
         for(i = 0; i < ARRAY_DIM; i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
-                array[i][j] = MIN(array[i][j], (array[i][k] + array[k][j]));
+                tmp_val = array[i][k]+tmp[j];
+                if(array[i][j] > tmp_val)
+                    array[i][j] = tmp_val;
             }
         }
+    }
     }
 
     gettimeofday(&stop_time, NULL);

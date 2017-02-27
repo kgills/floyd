@@ -1,15 +1,15 @@
 #!/bin/bash
-#SBATCH -N 1
+#SBATCH -N 2
 #SBATCH -p RM
 #SBATCH --ntasks-per-node 28
 #SBATCH -t 04:00:00
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=kgills@gmail.com
 
-ITERS=$(seq 1 10)
+ITERS=$(seq 1 1)
 CORES=$(seq 28 28)
-SIZE=16384
-FILE_NAME="floyd_omp_for"
+SIZE=1024
+FILE_NAME="floyd_omp_mpi"
 
 for CORE in ${CORES}
 do
@@ -20,6 +20,6 @@ do
 
     for ITER in ${ITERS}
     do
-        ./floyd_omp_for.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
+        mpirun -n 2 ./floyd_omp_mpi.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
     done
 done

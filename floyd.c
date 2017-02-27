@@ -96,11 +96,11 @@ int main(int argc, char *argv[])
 
             // Offset the value of i 
             int i_offset_temp = i+i_offset; 
-            if(i_offset == j) {
+            if(i_offset_temp == j) {
                 array[i][j] = 0;
-            } else if((i_offset-j) == 1) {
+            } else if((i_offset_temp-j) == 1) {
                 array[i][j] = 1;
-            } else if((j-i_offset) == 1) {
+            } else if((j-i_offset_temp) == 1) {
                 array[i][j] = 1;
             } else {
                 array[i][j] = MAX_VAL;
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     for(k = 0; k < ARRAY_DIM; k++) {
 
         // Have to copy out the kth row 
-        root = k/p;
+        root = k/(ARRAY_DIM/p);
         if(root == id) {
             int offset_temp = k - i_offset;
             #pragma omp parallel for private(i) schedule(static)
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
             // mempcy(tmp, array[offset], ARRAY_DIM);
         }
 
-        MPI_Bcast(tmp, ARRAY_DIM, MPI_DOUBLE, root, MPI_COMM_WORLD);
+        MPI_Bcast(tmp, ARRAY_DIM, MPI_FLOAT, root, MPI_COMM_WORLD);
         #pragma omp parallel for private(i,j) schedule(static)
         for(i = 0; i < (ARRAY_DIM/p); i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
@@ -137,6 +137,8 @@ int main(int argc, char *argv[])
             }
         }
     }
+
+    MPI_Finalize();   
 
     gettimeofday(&stop_time, NULL);
     timersub(&stop_time, &start_time, &elapsed_time);    
@@ -148,10 +150,11 @@ int main(int argc, char *argv[])
     }
 
     // Check the output of the matrix
-    for(i = 0; i < ARRAY_DIM; i++) {
+    for(i = 0; i < ARRAY_DIM/p; i++) {
         for(j = 0; j < ARRAY_DIM; j++) {
-            if(array[i][j] != (float)abs(i-j)) {
-                printf("Array error! i = %d j= %d array[i][j] = %d\n", i, j, (unsigned)array[i][j]);
+            int i_offset_temp = i+i_offset; 
+            if(array[i][j] != (float)abs(i_offset_temp-j)) {
+                printf("Array error! i = %d j= %d array[i][j] = %d\n", i_offset_temp, j, (unsigned)array[i][j]);
                 return 1;
             }
         }
@@ -159,6 +162,6 @@ int main(int argc, char *argv[])
 
     flops = ((double)2 * (double)ARRAY_DIM * (double)ARRAY_DIM * (double)ARRAY_DIM)/etime;
     printf("%d, %f, %f, %d\n", ARRAY_DIM, etime, flops, omp_get_max_threads());
-    
+ 
     return 0;
 }

@@ -107,7 +107,14 @@ int main(int argc, char *argv[])
     // Execute the algorithm
     float* tmp = (float*)malloc(ARRAY_DIM*sizeof(float));
     for(k = 0; k < ARRAY_DIM; k++) {
-        memcpy(tmp, array[k], ARRAY_DIM*sizeof(float));
+
+
+        #pragma omp parallel for private(i) schedule(static)
+        for(i = 0; i < ARRAY_DIM; i++) {
+            tmp[i] = array[k][i];
+        }
+        
+       //  memcpy(tmp, array[k], ARRAY_DIM*sizeof(float));
         #pragma omp parallel for private(j) schedule(static)
         for(i = 0; i < ARRAY_DIM; i++) {
             for(j = 0; j < ARRAY_DIM; j++) {

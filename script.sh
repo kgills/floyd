@@ -9,7 +9,7 @@
 ITERS=$(seq 1 10)
 CORES=$(seq 28 28)
 SIZE=16384
-FILE_NAME="floyd_omp"
+FILE_NAME="floyd_omp_for"
 
 for CORE in ${CORES}
 do
@@ -20,6 +20,6 @@ do
 
     for ITER in ${ITERS}
     do
-        ./floyd.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
+        ./floyd_omp_for.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
     done
 done

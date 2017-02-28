@@ -10,10 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include "mpi.h"
 
 /* Defines */
 // #define ARRAY_DIM 2048  
-#define ARRAY_DIM   16384
+#define ARRAY_DIM  2048 
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -77,6 +78,7 @@ int main(int argc, char *argv[])
     unsigned i,j,k;
     struct timeval start_time, stop_time, elapsed_time;
     double etime, flops;
+    float *tmp = (float*)malloc(ARRAY_DIM*sizeof(float)); 
 
     int id, p, i_offset, root;
 
@@ -111,24 +113,31 @@ int main(int argc, char *argv[])
         printf("Initial array\n");
         print_array(array);
     }
- 
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+     
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
     
-    #pragma acc data copy(array[0:ARRAY_DIM][0:ARRAY_DIM], create(tmp[0:ARRAY_DIM])
+    #pragma acc data copy(array[0:ARRAY_DIM][0:ARRAY_DIM]), create(tmp[0:ARRAY_DIM]), create(i,j,k, root, id)
     {
-    float *tmp = (float*)malloc(ARRAY_DIM*sizeof(float)); 
     for(k = 0; k < ARRAY_DIM; k++) {
 
         // Have to copy out the kth row 
-        root = k/p;
+        root = k/(ARRAY_DIM/p);
+        
         if(root == id) {
             int offset_temp = k - i_offset;
-            mempcy(tmp, array[offset], ARRAY_DIM);
+            #pragma acc kernels
+            for(i = 0; i < ARRAY_DIM; i++) {
+                tmp[i] = array[offset_temp][i];
+            }
         }
 
-        MPI_Bcast(tmp, ARRAY_DIM, MPI_DOUBLE, root, MPI_COMM_WORLD);
+        #pragma acc update self(tmp[0:ARRAY_DIM])    
+        MPI_Bcast(tmp, ARRAY_DIM, MPI_FLOAT, root, MPI_COMM_WORLD);
+
         #pragma acc kernels
         for(i = 0; i < (ARRAY_DIM/p); i++) {
             for(j = 0; j < ARRAY_DIM; j++) {
@@ -138,6 +147,8 @@ int main(int argc, char *argv[])
     }
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    
     gettimeofday(&stop_time, NULL);
     timersub(&stop_time, &start_time, &elapsed_time);    
     etime = elapsed_time.tv_sec+elapsed_time.tv_usec/1000000.0;

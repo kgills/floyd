@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 1
+#SBATCH -N 2
 #SBATCH -p GPU
 #SBATCH --gre=gpu:p100:2
 #SBATCH --ntasks-per-node 28
@@ -9,18 +9,13 @@
 
 ITERS=$(seq 1 10)
 CORES=$(seq 28 28)
-SIZE=16384
-FILE_NAME="floyd_acc"
+SIZE=2048
+FILE_NAME="floyd_acc_mpi"
 
-for CORE in ${CORES}
+touch "${FILE_NAME}_2_${SIZE}.txt"
+echo "matrix_dim, etime, flops, cores">>"${FILE_NAME}_2_${SIZE}.txt"
+
+for ITER in ${ITERS}
 do
-
-    export OMP_NUM_THREADS=${CORE}
-    touch "${FILE_NAME}_${CORE}_${SIZE}.txt"
-    echo "matrix_dim, etime, flops, cores">>"${FILE_NAME}_${CORE}_${SIZE}.txt"
-
-    for ITER in ${ITERS}
-    do
-        ./floyd.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
-    done
+    mpirun -n 2 ./floyd_acc_mpi.out>>"${FILE_NAME}_2_${SIZE}.txt"
 done

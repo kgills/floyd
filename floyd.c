@@ -14,7 +14,7 @@
 
 /* Defines */
 // #define ARRAY_DIM 2048  
-#define ARRAY_DIM   16384
+#define ARRAY_DIM  16384 
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -113,6 +113,8 @@ int main(int argc, char *argv[])
         print_array(array);
     }
  
+    MPI_Barrier(MPI_COMM_WORLD);
+
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
@@ -138,9 +140,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    MPI_Finalize();   
+    MPI_Barrier(MPI_COMM_WORLD);   
 
     gettimeofday(&stop_time, NULL);
+
     timersub(&stop_time, &start_time, &elapsed_time);    
     etime = elapsed_time.tv_sec+elapsed_time.tv_usec/1000000.0;
 
@@ -160,8 +163,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    flops = ((double)2 * (double)ARRAY_DIM * (double)ARRAY_DIM * (double)ARRAY_DIM)/etime;
-    printf("%d, %f, %f, %d\n", ARRAY_DIM, etime, flops, omp_get_max_threads());
+
+    if(0 == id) {
+        flops = ((double)2 * (double)ARRAY_DIM * (double)ARRAY_DIM * (double)ARRAY_DIM)/etime;
+        printf("%d, %f, %f, %d\n", ARRAY_DIM, etime, flops, omp_get_max_threads());
+    }
  
+    MPI_Finalize();
     return 0;
 }

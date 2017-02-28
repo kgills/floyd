@@ -8,13 +8,12 @@
 
 ITERS=$(seq 1 10)
 SIZE=16384
-FILE_NAME="floyd_omp_mpi"
+FILE_NAME="floyd_omp_mpi_pgi"
 
 export OMP_NUM_THREADS=28
 touch "${FILE_NAME}_32_${SIZE}.txt"
 echo "matrix_dim, etime, flops, cores">>"${FILE_NAME}_32_${SIZE}.txt"
-echo "32"
 for ITER in ${ITERS}
 do
-    mpirun -n 32 ./floyd.out>>"${FILE_NAME}_32_${SIZE}.txt"
+    mpirun -n 32 ./floyd_omp_mpi.out>>"${FILE_NAME}_32_${SIZE}.txt"
 done

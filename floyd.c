@@ -14,7 +14,7 @@
 
 /* Defines */
 // #define ARRAY_DIM 2048  
-#define ARRAY_DIM  2048 
+#define ARRAY_DIM  8192 
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     unsigned i,j,k;
     struct timeval start_time, stop_time, elapsed_time;
     double etime, flops;
-    float *tmp = (float*)malloc(ARRAY_DIM*sizeof(float)); 
+    float* restrict tmp = (float*)malloc(ARRAY_DIM*sizeof(float)); 
 
     int id, p, i_offset, root;
 
@@ -89,7 +89,8 @@ int main(int argc, char *argv[])
     i_offset = id*(ARRAY_DIM/p);
 
     // Initialize the array
-    float *array[ARRAY_DIM/p];
+    float* restrict  array[ARRAY_DIM/p];
+    // float array[ARRAY_DIM/p][ARRAY_DIM];
     k = 0;
     for(i = 0; i < (ARRAY_DIM/p); i++) {
         array[i] = (float*)malloc(ARRAY_DIM * sizeof(float));
@@ -97,11 +98,11 @@ int main(int argc, char *argv[])
 
             // Offset the value of i 
             int i_offset_temp = i+i_offset; 
-            if(i_offset == j) {
+            if(i_offset_temp == j) {
                 array[i][j] = 0;
-            } else if((i_offset-j) == 1) {
+            } else if((i_offset_temp-j) == 1) {
                 array[i][j] = 1;
-            } else if((j-i_offset) == 1) {
+            } else if((j-i_offset_temp) == 1) {
                 array[i][j] = 1;
             } else {
                 array[i][j] = MAX_VAL;
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
 
     if(ARRAY_DIM < 32) {
         printf("Initial array\n");
-        print_array(array);
+        // print_array(array);
     }
     
     MPI_Barrier(MPI_COMM_WORLD);
@@ -119,8 +120,7 @@ int main(int argc, char *argv[])
     gettimeofday(&start_time, NULL);
 
     // Execute the algorithm
-    
-    #pragma acc data copy(array[0:ARRAY_DIM][0:ARRAY_DIM]), create(tmp[0:ARRAY_DIM]), create(i,j,k, root, id)
+    #pragma acc data copy(array[0:ARRAY_DIM/p][0:ARRAY_DIM]), create(tmp[0:ARRAY_DIM])
     {
     for(k = 0; k < ARRAY_DIM; k++) {
 
@@ -134,12 +134,13 @@ int main(int argc, char *argv[])
                 tmp[i] = array[offset_temp][i];
             }
         }
-
         #pragma acc update self(tmp[0:ARRAY_DIM])    
         MPI_Bcast(tmp, ARRAY_DIM, MPI_FLOAT, root, MPI_COMM_WORLD);
+        #pragma acc update device(tmp[0:ARRAY_DIM])    
 
-        #pragma acc kernels
+        #pragma acc kernels wait
         for(i = 0; i < (ARRAY_DIM/p); i++) {
+
             for(j = 0; j < ARRAY_DIM; j++) {
                 array[i][j] = MIN(array[i][j], (array[i][k] + tmp[j]));
             }
@@ -155,21 +156,27 @@ int main(int argc, char *argv[])
 
     if(ARRAY_DIM < 32) {
         printf("\nFinal array\n");
-        print_array(array);
+        // print_array(array);
     }
 
     // Check the output of the matrix
-    for(i = 0; i < ARRAY_DIM; i++) {
-        for(j = 0; j < ARRAY_DIM; j++) {
-            if(array[i][j] != (float)abs(i-j)) {
-                printf("Array error! i = %d j= %d array[i][j] = %d\n", i, j, (unsigned)array[i][j]);
-                return 1;
+    int error = 0;
+    for(i = 0; (i < ARRAY_DIM/p && !error); i++) {
+        for(j = 0; (j < ARRAY_DIM && !error); j++) {
+            int i_offset_temp = i+i_offset;
+            if(array[i][j] != (float)abs(i_offset_temp-j)) {
+                printf("Array error! i = %d j= %d array[i][j] = %d\n", i_offset_temp, j, (unsigned)array[i][j]);
+                error = 1;
             }
         }
     }
 
     flops = ((double)2 * (double)ARRAY_DIM * (double)ARRAY_DIM * (double)ARRAY_DIM)/etime;
-    printf("%d, %f, %f, %d\n", ARRAY_DIM, etime, flops, omp_get_max_threads());
+    if(0 == id) {
+        printf("%d, %f, %f, %d\n", ARRAY_DIM, etime, flops, omp_get_max_threads());
+    }
+
+    MPI_Finalize();
     
     return 0;
 }

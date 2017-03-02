@@ -6,8 +6,8 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=kgills@gmail.com
 
-ITERS=$(seq 1 10)
-CORES=$(seq 1 28)
+ITERS=$(seq 1 1)
+CORES=$(seq 19 28)
 SIZE=8192
 FILE_NAME="floyd_omp"
 

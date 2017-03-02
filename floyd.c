@@ -128,7 +128,6 @@ int main(int argc, char *argv[])
             for(i = 0; i < ARRAY_DIM; i++) {
                 tmp[i] = array[offset_temp][i];
             }
-            // mempcy(tmp, array[offset], ARRAY_DIM);
         }
 
         MPI_Bcast(tmp, ARRAY_DIM, MPI_FLOAT, root, MPI_COMM_WORLD);

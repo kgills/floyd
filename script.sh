@@ -2,9 +2,10 @@
 #SBATCH -N 4
 #SBATCH -p GPU
 #SBATCH --gre=gpu:p100:2
-#SBATCH -t 04:00:00
-#SBATCH --mail-type=FAIL
+#SBATCH -t 05:00:00
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=kgills@gmail.com
+#SBATCH --ntasks-per-node=1
 
 ITERS=$(seq 1 10)
 SIZE=8192

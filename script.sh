@@ -2,14 +2,14 @@
 #SBATCH -N 1
 #SBATCH -p RM
 #SBATCH --ntasks-per-node 28
-#SBATCH -t 04:00:00
+#SBATCH -t 06:00:00
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=kgills@gmail.com
 
 ITERS=$(seq 1 10)
-CORES=$(seq 28 28)
-SIZE=16384
-FILE_NAME="floyd_omp_for"
+CORES=$(seq 1 28)
+SIZE=8192
+FILE_NAME="floyd_omp"
 
 for CORE in ${CORES}
 do
@@ -20,6 +20,6 @@ do
 
     for ITER in ${ITERS}
     do
-        ./floyd_omp_for.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
+        ./floyd_omp.out>>"${FILE_NAME}_${CORE}_${SIZE}.txt"
     done
 done

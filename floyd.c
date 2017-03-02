@@ -14,7 +14,7 @@
 
 /* Defines */
 // #define ARRAY_DIM 2048  
-#define ARRAY_DIM  16384 
+#define ARRAY_DIM   8192 
 #define MAX_VAL     ARRAY_DIM
 
 #define MIN(a,b) (((a)<(b))?(a):(b))

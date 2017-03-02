@@ -1,5 +1,5 @@
 CC=mpicc
-C_FLAGS=-omp -acc -O4 -Munroll -mcmodel=medium
+C_FLAGS=-omp -O4 -Munroll -mcmodel=medium
 OUTPUT=floyd_omp_mpi.out
 
 all: floyd.c
